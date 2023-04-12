@@ -1,0 +1,111 @@
+<html>
+  <head>
+    <title>Inconf Live Slides Demo</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" sizes="180x180" href="/liveslides/ico/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/liveslides/ico/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/liveslides/ico/favicon-16x16.png">
+    <link rel="manifest" href="/liveslides/ico/site.webmanifest">
+    <link rel="mask-icon" href="/liveslides/ico/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/liveslides/ico/favicon.ico">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="msapplication-config" content="/liveslides/ico/browserconfig.xml">
+    <meta name="theme-color" content="#ffffff">
+    <script src="https://unpkg.com/@daily-co/daily-js"></script>
+  </head>
+  <body onload="main()">
+    <div id="controls">
+    </div>
+    <div id="videos"></div>
+    <div id="audios"></div>
+    <script>
+	    let shareButton;
+      async function main() {
+
+        const ROOM_URL = "https://timwbodine.daily.co/Screenshare";
+
+        window.call = DailyIframe.createCallObject({
+          url: ROOM_URL,
+          subscribeToTracksAutomatically: true,
+          dailyConfig: {
+            experimentalChromeVideoMuteLightOff: true,
+          },
+        });
+
+        call.on("track-started", startTrack);
+        call.on("track-stopped", stopTrack);
+
+	await joinAudience();
+      }
+
+      function startTrack(evt) {
+        console.log("track started: ", evt);
+        if (evt.track.kind === "audio" && evt.participant.owner) {
+          let audiosDiv = document.getElementById("audios");
+          let audioEl = document.createElement("audio");
+          audiosDiv.appendChild(audioEl);
+          audioEl.style.width = "100%";
+          audioEl.srcObject = new MediaStream([evt.track]);
+          audioEl.play();
+	} else if (evt.track.kind === "video" && evt.participant.owner && evt.track.muted === false) {
+          let videosDiv = document.getElementById("videos");
+          let videoEl = document.createElement("video");
+          videosDiv.replaceChildren(videoEl);
+          videoEl.style.width = "100%";
+          videoEl.srcObject = new MediaStream([evt.track]);
+          videoEl.setAttribute("controls","true");
+		  videoEl.play();
+
+        }
+
+      }
+
+      function stopTrack(evt) {
+        let vids = document.getElementsByTagName("video");
+        for (let vid of vids) {
+          if (
+            vid.srcObject &&
+            vid.srcObject.getVideoTracks()[0] === evt.track
+          ) {
+            vid.remove();
+          }
+        }
+      }
+
+      async function joinPresenter() {
+        await joinRoomOwner();
+      }
+
+      async function joinAudience() {
+        await joinRoom();
+      }
+
+      async function joinRoomOwner() {
+        await call.join({
+          audioSource: false,
+          videoSource: false,
+		token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyIjoiU2NyZWVuc2hhcmUiLCJzcyI6dHJ1ZSwibyI6dHJ1ZSwiZCI6ImVjZDgyY2FkLWE3NWUtNGY4Ny1hNjQ5LTkyNTU2NDY4OThkMSIsImlhdCI6MTY4MTMwNTQ0OH0.-wOfz9xyR03OTZYnMS2G6ZtUng39rFloQaMGeiCLXbM"
+        });
+      }
+      async function joinRoom() {
+        await call.join({
+          audioSource: false,
+          videoSource: false
+        });
+      }
+      async function leaveRoom() {
+        let vids = document.getElementsByTagName("video");
+        for (let vid of vids) {
+          vid.remove();
+        }
+        await call.leave();
+      }
+      
+      async function startScreenshare() {
+        await call.startScreenShare();
+      }
+    </script>
+  </body>
+</html>
+
+

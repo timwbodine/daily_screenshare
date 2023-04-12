@@ -1,0 +1,127 @@
+<html>
+  <head>
+    <title>PRESENTER ZONE</title>
+    <script src="https://unpkg.com/@daily-co/daily-js"></script>
+  </head>
+  <body onload="main()">
+    <div id="controls">
+      <button id="share" onclick="startScreenshare()" style="inline-block">
+        Start Screenshare
+      </button>
+      <button id="camera" onclick="presenter()" style="inline-block">
+        Start Camera
+      </button>
+    </div>
+    <div id="videos"></div>
+    <div id="audios"></div>
+    <script>
+        let shareButton;
+        const ROOM_URL = "https://timwbodine.daily.co/Screenshare";
+        const OWNER_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyIjoiU2NyZWVuc2hhcmUiLCJzcyI6dHJ1ZSwibyI6dHJ1ZSwiZCI6ImVjZDgyY2FkLWE3NWUtNGY4Ny1hNjQ5LTkyNTU2NDY4OThkMSIsImlhdCI6MTY4MTMwNTQ0OH0.-wOfz9xyR03OTZYnMS2G6ZtUng39rFloQaMGeiCLXbM";
+        const iframeProps = {
+            position: "fixed",
+            border: "1px solid black",
+            width: "80%",
+            height: "80%",
+            right: "1em",
+            bottom: "1em"
+          }
+        
+        async function main() {
+
+        }
+
+        function startTrack(evt) {
+            console.log("track started: ", evt);
+            if (evt.track.kind === "audio" && evt.participant.owner) {
+                let audiosDiv = document.getElementById("audios");
+                let audioEl = document.createElement("audio");
+                audiosDiv.appendChild(audioEl);
+                audioEl.style.width = "100%";
+                audioEl.srcObject = new MediaStream([evt.track]);
+                audioEl.play();
+	        } else if (evt.track.kind === "video" && evt.participant.owner && evt.track.muted === false) {
+	            console.log("here is the evt.track.kind" + evt.track.label + "which is a screenshare??" + evt.participant.owner);
+                let videosDiv = document.getElementById("videos");
+                let videoEl = document.createElement("video");
+                videosDiv.replaceChildren(videoEl);
+                videoEl.style.width = "100%";
+                videoEl.srcObject = new MediaStream([evt.track]);
+                videoEl.setAttribute("controls","true");
+                videoEl.play();
+            }
+        }
+
+        function stopTrack(evt) {
+            let vids = document.getElementsByTagName("video");
+            for (let vid of vids) {
+            if (
+                vid.srcObject &&
+                vid.srcObject.getVideoTracks()[0] === evt.track
+            ) {
+                vid.remove();
+            }
+            }
+        }
+
+        async function joinPresenter() {
+            await joinRoomOwner();
+        }
+
+        async function joinAudience() {
+            await joinRoom();
+        }
+
+        async function joinRoomOwner() {
+            await call.join({
+            audioSource: false,
+            videoSource: false, 
+            token: OWNER_TOKEN
+            });
+        }
+        async function joinRoom() {
+            await call.join({
+            audioSource: false,
+            videoSource: false
+            });
+        }
+        async function leaveRoom() {
+            let vids = document.getElementsByTagName("video");
+            for (let vid of vids) {
+            vid.remove();
+            }
+            await call.leave();
+        }
+        
+        async function startScreenshare() {
+            window.call = DailyIframe.createCallObject({
+                url: ROOM_URL,
+                subscribeToTracksAutomatically: true,
+                dailyConfig: {
+                    experimentalChromeVideoMuteLightOff: true,
+                },
+            });
+
+            call.on("track-started", startTrack);
+            call.on("track-stopped", stopTrack);
+            await joinPresenter();
+            await call.startScreenShare();
+        }
+
+        async function presenter() {
+            window.call = DailyIframe.createFrame({
+                url: ROOM_URL,
+                iframeStyle: iframeProps,
+                showLeaveButton: false,
+                showFullscreenButton: true,
+                showLocalVideo: true,
+                showParticipantsBar: false,
+                dailyConfig: {
+                    experimentalChromeVideoMuteLightOff: true
+                }
+            });
+            await call.join({token: OWNER_TOKEN})
+        }
+    </script>
+  </body>
+</html>
