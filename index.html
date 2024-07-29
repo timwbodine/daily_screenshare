@@ -41,7 +41,6 @@
                 audioEl.srcObject = new MediaStream([evt.track]);
                 audioEl.play();
 	        } else if (evt.track.kind === "video" && evt.participant.owner && evt.track.muted === false) {
-	            console.log("here is the evt.track.kind" + evt.track.label + "which is a screenshare??" + evt.participant.owner);
                 let videosDiv = document.getElementById("videos");
                 let videoEl = document.createElement("video");
                 videosDiv.replaceChildren(videoEl);
